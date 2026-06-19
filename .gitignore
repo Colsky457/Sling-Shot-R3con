@@ -1,0 +1,10 @@
+# Scan output
+scans/
+scope/
+resolved.txt
+
+# Editor backups
+*.save
+*.swp
+*.swo
+*~
