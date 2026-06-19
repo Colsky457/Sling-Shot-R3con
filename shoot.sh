@@ -1,10 +1,12 @@
 #!/bin/bash
 
-# Set up scan_path globally
-id="$1"
-ppath="$(pwd)"
-timestamp="$(date +%s)"
-scan_path="$ppath/scans/$id-$timestamp"
+# Function to initialize global scan variables
+init_globals() {
+    id="$1"
+    ppath="$(pwd)"
+    timestamp="$(date +%s)"
+    scan_path="$ppath/scans/$id-$timestamp"
+}
 
 # Function to create a scan folder and set up necessary files
 setup_scan() {
@@ -93,36 +95,50 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'  # No Color
 
-# Main script
+# Function to calculate and display scan duration
+calculate_duration() {
+    local end_time="$(date +%s)"
+    local seconds="$(expr $end_time - $timestamp)"
+    local time=" "
 
-# Check if an argument is provided
-if [ $# -eq 0 ]; then
-    echo -e "${RED}[ERROR] Usage: $0 <folder_name>${NC}"
-    exit 1
+    if [[ $seconds -gt 59 ]]; then
+        local minutes=$(expr $seconds / 60)
+        time="$minutes minutes"
+    else
+        time="$seconds seconds"
+    fi
+
+    echo -e "${GREEN}[$id] Scan took $time${NC}"
+}
+
+# Main script execution
+main() {
+    # Check if an argument is provided
+    if [ $# -eq 0 ]; then
+        echo -e "${RED}[ERROR] Usage: $0 <folder_name>${NC}"
+        return 1
+    fi
+
+    # Initialize global variables
+    init_globals "$1"
+
+    # Set up the scan folder and necessary files
+    setup_scan "$1"
+
+    # Perform DNS enumeration and resolution
+    perform_dns_scan
+
+    # Perform port scanning and HTTP server discovery
+    perform_port_scan
+
+    # Perform crawling and JavaScript scraping
+    perform_crawling
+
+    # Calculate and display scan duration
+    calculate_duration
+}
+
+# Only run main when executed directly, not when sourced
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
 fi
-
-# Set up the scan folder and necessary files
-setup_scan "$1"
-
-# Perform DNS enumeration and resolution
-perform_dns_scan
-
-# Perform port scanning and HTTP server discovery
-perform_port_scan
-
-# Perform crawling and JavaScript scraping
-perform_crawling
-
-# Calculate and display scan duration
-end_time="$(date +%s)"
-seconds="$(expr $end_time - $timestamp)"
-time=" "
-
-if [[ $seconds -gt 59 ]]; then
-    minutes=$(expr $seconds / 60)
-    time="$minutes minutes"
-else
-    time="$seconds seconds"
-fi
-
-echo -e "${GREEN}[$id] Scan took $time${NC}"
