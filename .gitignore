@@ -1,0 +1,7 @@
+# Scan output — may contain sensitive reconnaissance data
+scans/
+scope/
+resolved.txt
+
+# JavaScript response dumps
+js/

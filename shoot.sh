@@ -1,7 +1,33 @@
 #!/bin/bash
 
+set -euo pipefail
+
+# Define colors
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'  # No Color
+
+# --- Input Validation ---
+# Only allow valid domain characters (alphanumeric, dots, hyphens) to prevent
+# command injection and path traversal via crafted arguments.
+validate_domain() {
+    local input="$1"
+    if [[ ! "$input" =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?$ ]]; then
+        echo -e "${RED}[ERROR] Invalid domain: contains disallowed characters.${NC}" >&2
+        echo -e "${RED}        Only alphanumeric characters, dots, and hyphens are allowed.${NC}" >&2
+        exit 1
+    fi
+    if [[ "$input" == *..* ]]; then
+        echo -e "${RED}[ERROR] Invalid domain: consecutive dots not allowed.${NC}" >&2
+        exit 1
+    fi
+}
+
 # Set up scan_path globally
 id="$1"
+validate_domain "$id"
 ppath="$(pwd)"
 timestamp="$(date +%s)"
 scan_path="$ppath/scans/$id-$timestamp"
@@ -42,6 +68,8 @@ setup_scan() {
         exit 1
     fi
 
+    # Restrict permissions on scan output to owner-only
+    umask 077
     mkdir -p "$scan_path"
     cd "$scan_path"
 
@@ -86,20 +114,21 @@ perform_crawling() {
     cat "$scan_path/crawl.txt" | grep "\.js" | httpx -sr -srd js
 }
 
-# Define colors
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'  # No Color
-
 # Main script
 
 # Check if an argument is provided
 if [ $# -eq 0 ]; then
-    echo -e "${RED}[ERROR] Usage: $0 <folder_name>${NC}"
+    echo -e "${RED}[ERROR] Usage: $0 <domain>${NC}"
     exit 1
 fi
+
+# Verify required tools are installed
+for tool in subfinder shuffledns puredns dnsx naabu httpx katana; do
+    if ! command -v "$tool" &>/dev/null; then
+        echo -e "${RED}[ERROR] Required tool '$tool' not found. Run ./requirements.sh first.${NC}"
+        exit 1
+    fi
+done
 
 # Set up the scan folder and necessary files
 setup_scan "$1"
@@ -115,11 +144,11 @@ perform_crawling
 
 # Calculate and display scan duration
 end_time="$(date +%s)"
-seconds="$(expr $end_time - $timestamp)"
+seconds="$(( end_time - timestamp ))"
 time=" "
 
 if [[ $seconds -gt 59 ]]; then
-    minutes=$(expr $seconds / 60)
+    minutes=$(( seconds / 60 ))
     time="$minutes minutes"
 else
     time="$seconds seconds"
