@@ -1,0 +1,51 @@
+# Sling Configuration
+# All settings can be overridden via environment variables with SLING_ prefix
+# e.g., SLING_GENERAL__LOG_LEVEL=DEBUG
+
+general:
+  output_dir: "./scans"
+  temp_dir: "./tmp"
+  log_level: "INFO"
+  max_parallel: 4
+
+tools:
+  subfinder: "subfinder"
+  shuffledns: "shuffledns"
+  puredns: "puredns"
+  dnsx: "dnsx"
+  naabu: "naabu"
+  tew: "tew"
+  httpx: "httpx"
+  katana: "katana"
+
+wordlists:
+  resolvers: "lists/resolvers.txt"
+  subdomains: "lists/subdomains-top1million-20000.txt"
+  auto_update: true
+
+dns:
+  passive:
+    enabled: true
+    timeout: 300
+  active:
+    enabled: true
+    timeout: 600
+  resolution:
+    enabled: true
+    timeout: 300
+
+port:
+  scan:
+    enabled: true
+    ports: "top-1000"
+    rate: 1000
+    timeout: 600
+  http_probe:
+    enabled: true
+    timeout: 30
+
+crawl:
+  enabled: true
+  depth: 2
+  timeout: 600
+  js_extraction: true
