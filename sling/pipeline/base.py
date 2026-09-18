@@ -67,12 +67,7 @@ class PipelineStep(ABC):
 
     def can_resume(self, context: ScanContext) -> bool:
         """Check if step can be resumed from previous run."""
-        return self.state.can_resume_step(context.scan_id, self.name)
-
-    @property
-    def state(self):
-        """Access state manager from context."""
-        return context.state
+        return context.state.can_resume_step(context.scan_id, self.name)
 
 
 class PipelineOrchestrator:
@@ -94,17 +89,17 @@ class PipelineOrchestrator:
 
     def _get_execution_order(self) -> List[List[str]]:
         """Get steps grouped by execution level (parallelizable groups)."""
-        # Kahn's algorithm for topological sort with level grouping
         in_degree = {name: 0 for name in self.steps}
+        dependents = {name: [] for name in self.steps}
         for step in self.steps.values():
             for dep in step.dependencies:
                 in_degree[step.name] += 1
+                dependents[dep].append(step.name)
 
         levels = []
         remaining = set(self.steps.keys())
 
         while remaining:
-            # Find all nodes with in-degree 0
             current_level = [name for name in remaining if in_degree[name] == 0]
             if not current_level:
                 raise ValueError("Circular dependency detected in pipeline")
@@ -112,9 +107,8 @@ class PipelineOrchestrator:
             levels.append(current_level)
             for name in current_level:
                 remaining.remove(name)
-                step = self.steps[name]
-                for dep in step.dependencies:
-                    in_degree[dep] -= 1
+                for dependent in dependents[name]:
+                    in_degree[dependent] -= 1
 
         return levels
 
