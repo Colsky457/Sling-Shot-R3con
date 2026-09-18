@@ -332,9 +332,7 @@ dependencies = [
     "structlog>=24.0",
     "rich>=13.0",        # Pretty CLI output
     "tenacity>=8.0",     # Retry logic
-    "asyncio-throttle>=1.0",  # Rate limiting
     "aiofiles>=23.0",    # Async file I/O
-    "sqlite-utils>=3.0", # State DB
 ]
 
 [project.optional-dependencies]

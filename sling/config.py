@@ -2,8 +2,13 @@
 
 from pathlib import Path
 from typing import Literal
+
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 
 class GeneralConfig(BaseModel):
@@ -61,7 +66,10 @@ class DNSConfig(BaseModel):
 class PortScanConfig(BaseModel):
     """Port scanning configuration."""
     enabled: bool = True
-    ports: str = Field(default="top-1000", description="Port range: 'top-100', 'top-1000', 'full', or comma-separated")
+    ports: str = Field(
+        default="top-1000",
+        description="Port range: 'top-100', 'top-1000', 'full', or comma-separated",
+    )
     rate: int = Field(default=1000, ge=1, description="Packets per second")
     timeout: int = Field(default=600, ge=10)
 
@@ -101,11 +109,36 @@ class Config(BaseSettings):
     dns: DNSConfig = Field(default_factory=DNSConfig)
     port: PortConfig = Field(default_factory=PortConfig)
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
+    _runtime_yaml_file: Path | None = None
 
     def __init__(self, **kwargs):
+        runtime = kwargs.pop("_yaml_file", None)
+        type(self)._runtime_yaml_file = Path(runtime) if runtime else None
         super().__init__(**kwargs)
         # Ensure paths are absolute
         self.general.output_dir = self.general.output_dir.resolve()
         self.general.temp_dir = self.general.temp_dir.resolve()
         self.wordlists.resolvers = self.wordlists.resolvers.resolve()
         self.wordlists.subdomains = self.wordlists.subdomains.resolve()
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        yaml_file = cls._runtime_yaml_file or cls.model_config.get("yaml_file")
+        return (
+            init_settings,
+            YamlConfigSettingsSource(
+                settings_cls,
+                yaml_file=str(yaml_file),
+                yaml_file_encoding="utf-8",
+            ),
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
