@@ -105,6 +105,13 @@ class TestPortResolution:
         assert len(ports) == 100
         assert ports[0] == 80
 
+    def test_get_top_ports_500_unique(self):
+        """Regression: duplicate 50851 used to make top-500 return 496 unique ports."""
+        ports = get_top_ports(500)
+        assert len(ports) == 500
+        assert len(set(ports)) == 500
+        assert ports[0] == 80
+
     def test_resolve_ports_custom(self):
         ports = resolve_ports("80,443,8080")
         assert ports == [80, 443, 8080]
