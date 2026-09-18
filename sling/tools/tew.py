@@ -1,6 +1,6 @@
 """TEW tool wrapper."""
 
-from typing import Optional
+from typing import Optional, List
 from pathlib import Path
 
 from .base import ToolWrapper
