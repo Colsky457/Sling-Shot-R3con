@@ -24,9 +24,7 @@ dependencies = [
     "structlog>=24.0",
     "rich>=13.0",
     "tenacity>=8.0",
-    "asyncio-throttle>=1.0",
     "aiofiles>=23.0",
-    "sqlite-utils>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -39,10 +37,11 @@ dev = [
     "pre-commit>=3.0",
 ]
 
-[project.entry-points]
-console_scripts = [
-    "sling = sling.cli:main",
-]
+[project.scripts]
+sling = "sling.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sling*"]
 
 [tool.ruff]
 target-version = "py311"
