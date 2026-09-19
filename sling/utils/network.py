@@ -1,12 +1,11 @@
 """Network utilities including rate limiting."""
 
 import asyncio
-from asyncio_throttle import Throttler
 from typing import Optional
 
 
 class RateLimiter:
-    """Token bucket rate limiter for network operations."""
+    """Semaphore-based rate limiter for network operations."""
 
     def __init__(self, rate: float, burst: Optional[int] = None):
         """
@@ -16,11 +15,15 @@ class RateLimiter:
             rate: Requests per second
             burst: Maximum burst size (defaults to rate)
         """
-        self.throttler = Throttler(rate_limit=rate, burst=burst or int(rate))
+        capacity = burst if burst is not None else max(1, int(rate))
+        self._semaphore = asyncio.Semaphore(capacity)
 
     async def acquire(self) -> None:
         """Acquire permission to make a request."""
-        await self.throttler.acquire()
+        await self._semaphore.acquire()
+
+    def release(self) -> None:
+        self._semaphore.release()
 
     def __enter__(self):
         return self
