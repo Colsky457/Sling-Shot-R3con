@@ -1,6 +1,6 @@
 """PureDNS tool wrapper."""
 
-from typing import Optional
+from typing import List, Optional
 from pathlib import Path
 
 from .base import ToolWrapper
@@ -15,7 +15,7 @@ class PureDNSWrapper(ToolWrapper):
         return "puredns"
 
     def get_version_args(self) -> List[str]:
-        return ["version"]
+        return ["-version"]
 
     async def resolve(
         self,
