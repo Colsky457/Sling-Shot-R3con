@@ -1,9 +1,11 @@
 """Configuration models for Sling."""
 
+import yaml
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+from pydantic_settings.sources import YamlConfigSettingsSource
 
 
 class GeneralConfig(BaseModel):
@@ -102,7 +104,39 @@ class Config(BaseSettings):
     port: PortConfig = Field(default_factory=PortConfig)
     crawl: CrawlConfig = Field(default_factory=CrawlConfig)
 
-    def __init__(self, **kwargs):
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """Include a YAML config file source if the configured file exists."""
+        sources: list[PydanticBaseSettingsSource] = [init_settings]
+        yaml_file = cls.model_config.get("yaml_file")
+        if yaml_file:
+            yaml_path = Path(yaml_file)
+            if yaml_path.exists():
+                sources.append(
+                    YamlConfigSettingsSource(
+                        settings_cls,
+                        yaml_file=yaml_file,
+                        yaml_file_encoding=cls.model_config.get("yaml_file_encoding", "utf-8"),
+                    )
+                )
+        sources.extend([env_settings, dotenv_settings, file_secret_settings])
+        return tuple(sources)
+
+    def __init__(self, **kwargs: Any) -> None:
+        yaml_file = kwargs.pop("_yaml_file", None)
+        if yaml_file is not None:
+            with Path(yaml_file).open("r", encoding="utf-8") as f:
+                yaml_data = yaml.safe_load(f) or {}
+            for key, value in yaml_data.items():
+                if key not in kwargs:
+                    kwargs[key] = value
         super().__init__(**kwargs)
         # Ensure paths are absolute
         self.general.output_dir = self.general.output_dir.resolve()

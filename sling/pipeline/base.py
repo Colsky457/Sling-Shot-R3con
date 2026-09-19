@@ -1,5 +1,6 @@
 """Base pipeline classes for Sling."""
 
+import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -67,12 +68,7 @@ class PipelineStep(ABC):
 
     def can_resume(self, context: ScanContext) -> bool:
         """Check if step can be resumed from previous run."""
-        return self.state.can_resume_step(context.scan_id, self.name)
-
-    @property
-    def state(self):
-        """Access state manager from context."""
-        return context.state
+        return context.state.can_resume_step(context.scan_id, self.name)
 
 
 class PipelineOrchestrator:
@@ -96,9 +92,11 @@ class PipelineOrchestrator:
         """Get steps grouped by execution level (parallelizable groups)."""
         # Kahn's algorithm for topological sort with level grouping
         in_degree = {name: 0 for name in self.steps}
+        dependents: Dict[str, List[str]] = {name: [] for name in self.steps}
         for step in self.steps.values():
             for dep in step.dependencies:
                 in_degree[step.name] += 1
+                dependents[dep].append(step.name)
 
         levels = []
         remaining = set(self.steps.keys())
@@ -112,9 +110,8 @@ class PipelineOrchestrator:
             levels.append(current_level)
             for name in current_level:
                 remaining.remove(name)
-                step = self.steps[name]
-                for dep in step.dependencies:
-                    in_degree[dep] -= 1
+                for dependent in dependents[name]:
+                    in_degree[dependent] -= 1
 
         return levels
 
@@ -125,7 +122,6 @@ class PipelineOrchestrator:
 
         for level in execution_order:
             # Execute steps in this level in parallel
-            import asyncio
             tasks = []
             for step_name in level:
                 step = self.steps[step_name]
@@ -180,7 +176,6 @@ class PipelineOrchestrator:
                 if attempt > 0:
                     delay = step.retry_delay * (2 ** (attempt - 1))
                     logger.info("step_retry", step=step.name, attempt=attempt, delay=delay)
-                    import asyncio
                     await asyncio.sleep(delay)
                     self.state.increment_step_retry(context.scan_id, step.name)
 

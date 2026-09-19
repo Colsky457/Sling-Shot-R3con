@@ -1,6 +1,6 @@
 """Utility modules for Sling."""
 
-from .subprocess import run_command, run_pipeline, parse_port_range, get_top_ports, resolve_ports
+from .subprocess import CommandResult, run_command, run_pipeline, parse_port_range, get_top_ports, resolve_ports
 from .validation import (
     validate_domain,
     validate_ip,
@@ -14,6 +14,7 @@ from .validation import (
 from .network import RateLimiter, ConnectionPool
 
 __all__ = [
+    "CommandResult",
     "run_command",
     "run_pipeline",
     "parse_port_range",
