@@ -94,6 +94,16 @@ class TestPortResolution:
         assert ports[0] == 80
         assert ports[1] == 443
 
+    def test_get_top_ports_100_unique(self):
+        ports = get_top_ports(100)
+        assert len(ports) == 100
+        assert len(set(ports)) == 100
+
+    def test_get_top_ports_500_unique(self):
+        ports = get_top_ports(500)
+        assert len(ports) == 500
+        assert len(set(ports)) == 500
+
     def test_resolve_ports_full(self):
         ports = resolve_ports("full")
         assert len(ports) == 65535

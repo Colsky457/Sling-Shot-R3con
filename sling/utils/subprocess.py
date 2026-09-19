@@ -118,7 +118,12 @@ def parse_port_range(port_spec: str) -> List[int]:
 
 
 def get_top_ports(n: int) -> List[int]:
-    """Get top N most common ports."""
+    """Get top N most common ports.
+
+    The literal below may contain accidental duplicates, so deduplicate
+    while preserving order before slicing. This guarantees ``get_top_ports(n)``
+    returns exactly ``n`` unique ports.
+    """
     # Common ports ordered by frequency
     top_ports = [
         80, 443, 8080, 8443, 22, 21, 25, 53, 110, 143,
