@@ -118,7 +118,12 @@ def parse_port_range(port_spec: str) -> List[int]:
 
 
 def get_top_ports(n: int) -> List[int]:
-    """Get top N most common ports."""
+    """Get top N most common ports.
+
+    The literal below may contain accidental duplicates, so deduplicate
+    while preserving order before slicing. This guarantees ``get_top_ports(n)``
+    returns exactly ``n`` unique ports.
+    """
     # Common ports ordered by frequency
     top_ports = [
         80, 443, 8080, 8443, 22, 21, 25, 53, 110, 143,
@@ -258,7 +263,7 @@ def get_top_ports(n: int) -> List[int]:
         50827, 50828, 50829, 50830, 50831, 50832, 50833,
         50834, 50835, 50836, 50837, 50838, 50839, 50840,
         50841, 50842, 50843, 50844, 50845, 50846, 50847,
-        50848, 50849, 50850, 50851, 50851, 50852, 50853,
+        50848, 50849, 50850, 50851, 50852, 50853,
         50854, 50855, 50856, 50857, 50858, 50859, 50860,
         50861, 50862, 50863, 50864, 50865, 50866, 50867,
         50868, 50869, 50870, 50871, 50872, 50873, 50874,
@@ -281,7 +286,7 @@ def get_top_ports(n: int) -> List[int]:
         50987, 50988, 50989, 50990, 50991, 50992, 50993,
         50994, 50995, 50996, 50997, 50998, 50999, 51000,
     ]
-    return top_ports[:n]
+    return list(dict.fromkeys(top_ports))[:n]
 
 
 def resolve_ports(port_spec: str) -> List[int]:
