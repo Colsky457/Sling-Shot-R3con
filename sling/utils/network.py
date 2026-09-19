@@ -15,7 +15,7 @@ class RateLimiter:
             rate: Requests per second
             burst: Maximum burst size (defaults to rate)
         """
-        capacity = burst if burst is not None else max(1, int(rate))
+        capacity = max(1, burst if burst is not None else int(rate))
         self._semaphore = asyncio.Semaphore(capacity)
 
     async def acquire(self) -> None:
